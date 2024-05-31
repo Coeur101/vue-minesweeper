@@ -17,12 +17,15 @@ interface BlockState {
 // 设置这个扫雷的画布大小
 const WIDTH = 10
 const HEIGHT = 10
-const state = reactive(Array.from({ length: HEIGHT }, (_, y) => Array.from({ length: WIDTH }, (_, x): BlockState => {
-  return {
-    x,
-    y,
-  }
-})))
+const state = reactive(
+  Array.from({ length: HEIGHT }, (_, y) =>
+    Array.from({ length: WIDTH }, (_, x): BlockState => {
+      return {
+        x,
+        y,
+      }
+    })),
+)
 function onClick(x: number, y: number) {
   state[y][x].revealed = true
   // if (state[y][x].mine) {
@@ -30,6 +33,7 @@ function onClick(x: number, y: number) {
   // }
 }
 function rightClick(block: BlockState) {
+  block.revealed = false
   block.flagged = !block.flagged
 }
 // 随机生成炸弹
@@ -65,7 +69,6 @@ const NumberColors = [
   'text-indigo-500',
   'text-purple-500',
   'text-pink-500',
-
 ]
 // 计算格子边上有几个炸弹
 function updateAdjacentMines() {
@@ -82,7 +85,9 @@ function updateAdjacentMines() {
         if (x2 >= WIDTH || x2 < 0 || y2 >= HEIGHT || y2 < 0) {
           return
         }
-        block.adjacentMines = state[y2][x2].mine ? block.adjacentMines as number + 1 : block.adjacentMines
+        block.adjacentMines = state[y2][x2].mine
+          ? (block.adjacentMines as number) + 1
+          : block.adjacentMines
       })
     })
   })
@@ -103,14 +108,22 @@ updateAdjacentMines()
     Minesweeper
     <div v-for="(row, y) in state" :key="y" flex="~" justify-center>
       <button
-        v-for="(item, x) in row" :key="x" m="0.5" :class="getBlockClass(item)"
-        h-10 w-10 border hover:bg-gray @contextmenu.prevent.stop="rightClick(item)" @click="onClick(x, y)"
+        v-for="(item, x) in row"
+        :key="x"
+        m="0.5"
+        :class="getBlockClass(item)"
+        h-10
+        w-10
+        border
+        hover:bg-gray
+        @contextmenu.prevent.stop="rightClick(item)"
+        @click="onClick(x, y)"
       >
         <template v-if="item.revealed">
-          {{ item.mine ? '💣' : item.adjacentMines }}
+          {{ item.mine ? "💣" : item.adjacentMines }}
         </template>
-        <template v-if="item.flagged">
-          {{ '🚩' }}
+        <template v-if="item.flagged && !item.revealed">
+          {{ "🚩" }}
         </template>
       </button>
     </div>
