@@ -52,6 +52,24 @@ const NumberColors = [
   'text-purple-500',
   'text-pink-500',
 ]
+// 随机生成炸弹
+function generateMines(currentBlock: BlockState) {
+  for (const row of state) {
+    for (const block of row) {
+      // 当前点击的周围不生成地雷
+      if (Math.abs(currentBlock.x - block.x) <= 1) {
+        continue
+      }
+      if (Math.abs(currentBlock.y - block.y) <= 1) {
+        continue
+      }
+      // 十分之一的概率会出现地雷
+      if (Math.random() < 0.1) {
+        block.mine = true
+      }
+    }
+  }
+}
 // 计算格子边上有几个炸弹
 function updateAdjacentMines() {
   state.forEach((row) => {
@@ -71,8 +89,11 @@ function updateAdjacentMines() {
 }
 // 交互
 function getBlockClass(item: BlockState) {
-  if (!item.revealed) {
+  if (item.flagged) {
     return 'bg-gray-500/50'
+  }
+  if (!item.revealed) {
+    return 'bg-gray-500/50 hover:bg-gray'
   }
   return item.mine ? 'bg-red-500' : NumberColors[item.adjacentMines as number]
 }
@@ -84,7 +105,7 @@ function expendZero(block: BlockState) {
     return
   }
   getSibliing(block).forEach((item) => {
-    if (!item.revealed) {
+    if (!item.revealed && !item.flagged) {
       item.revealed = true
       // 递归翻开全部为0的格子
       expendZero(item)
@@ -102,6 +123,19 @@ function getSibliing(block: BlockState) {
     return state[y2][x2]
   }).filter(Boolean) as BlockState[]
 }
+// 游戏完成的逻辑
+function gameYes() {
+  if (!isMineGenerated) {
+    return
+  }
+  // 拍平数组
+  const blocks = state.flat()
+  if (blocks.every(block => block.flagged || block.revealed)) {
+    if (blocks.some(block => block.mine && block.flagged)) {
+      // alert("你找到了所有的炸弹")
+    }
+  }
+}
 function onClick(x: number, y: number) {
   if (!isMineGenerated) {
     generateMines(state[y][x])
@@ -110,41 +144,25 @@ function onClick(x: number, y: number) {
   }
   expendZero(state[y][x])
   state[y][x].revealed = true
-
   if (state[y][x].mine) {
     // 把棋盘上的所有带炸弹的格子都给翻开
     state.forEach((row) => {
       row.forEach((block) => {
         if (block.mine) {
           block.revealed = true
+          block.flagged = false
         }
       })
     })
-
     // window.alert("BOOM! 游戏结束")
   }
 }
 // 右键标记
 function rightClick(block: BlockState) {
-  block.revealed = false
-
+  if (block.revealed)
+    return
   block.flagged = !block.flagged
-}
-// 随机生成炸弹
-function generateMines(currentBlock: BlockState) {
-  for (const row of state) {
-    for (const block of row) {
-      // 当前点击的周围不生成地雷
-      if (Math.abs(currentBlock.x - block.x) <= 1) {
-        continue
-      }
-      if (Math.abs(currentBlock.y - block.y) <= 1) {
-        continue
-      }
-      // 十分之一的概率会出现地雷
-      block.mine = Math.random() < 0.1
-    }
-  }
+  gameYes()
 }
 </script>
 
@@ -153,13 +171,13 @@ function generateMines(currentBlock: BlockState) {
     Minesweeper
     <div v-for="(row, y) in state" :key="y" flex="~" justify-center>
       <button
-        v-for="(item, x) in row" :key="x" m="0.5" :class="getBlockClass(item)" h-10 w-10 border hover:bg-gray
+        v-for="(item, x) in row" :key="x" m="0.5" :class="getBlockClass(item)" h-10 w-10 border
         @contextmenu.prevent.stop="rightClick(item)" @click="onClick(x, y)"
       >
         <template v-if="item.revealed || !dev">
           {{ item.mine ? "💣" : item.adjacentMines }}
         </template>
-        <template v-if="item.flagged && !item.revealed">
+        <template v-if="item.flagged">
           {{ "🚩" }}
         </template>
       </button>
