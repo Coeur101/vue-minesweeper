@@ -1,25 +1,17 @@
 <script setup lang="ts" generic="T extends any, O extends any">
+import MineBlock from '~/components/MineBlock.vue'
+import type { BlockState } from '~/types'
+
 defineOptions({
   name: 'IndexPage',
 })
-interface BlockState {
-  x: number
-  y: number
-  // 是否被翻开
-  revealed?: boolean
-  // 是否被标记
-  flagged?: boolean
-  // 是否是地雷
-  mine?: boolean
-  // 附近的地雷数
-  adjacentMines: number
-}
 // 设置这个扫雷的画布大小
 const WIDTH = 10
 const HEIGHT = 10
 let isMineGenerated = false
-const dev = false
-const state = reactive(
+// 炸弹个数
+let MINE_COUNT = 0
+const state = ref(
   Array.from({ length: HEIGHT }, (_, y) =>
     Array.from({ length: WIDTH }, (_, x): BlockState => {
       return {
@@ -41,20 +33,10 @@ const diretions = [
   [1, 0],
   [1, 1],
 ]
-const NumberColors = [
-  'text-transparent',
-  'text-red-500',
-  'text-orange-500',
-  'text-yellow-500',
-  'text-green-500',
-  'text-blue-500',
-  'text-indigo-500',
-  'text-purple-500',
-  'text-pink-500',
-]
+
 // 随机生成炸弹
 function generateMines(currentBlock: BlockState) {
-  for (const row of state) {
+  for (const row of state.value) {
     for (const block of row) {
       // 当前点击的周围不生成地雷
       if (Math.abs(currentBlock.x - block.x) <= 1) {
@@ -66,13 +48,14 @@ function generateMines(currentBlock: BlockState) {
       // 十分之一的概率会出现地雷
       if (Math.random() < 0.1) {
         block.mine = true
+        MINE_COUNT++
       }
     }
   }
 }
 // 计算格子边上有几个炸弹
 function updateAdjacentMines() {
-  state.forEach((row) => {
+  state.value.forEach((row) => {
     row.forEach((block) => {
       // 已经又炸弹了就return
       if (block.mine) {
@@ -87,16 +70,7 @@ function updateAdjacentMines() {
     })
   })
 }
-// 交互
-function getBlockClass(item: BlockState) {
-  if (item.flagged) {
-    return 'bg-gray-500/50'
-  }
-  if (!item.revealed) {
-    return 'bg-gray-500/50 hover:bg-gray'
-  }
-  return item.mine ? 'bg-red-500' : NumberColors[item.adjacentMines as number]
-}
+
 /**
  * 点击后查看周围的格子是否是0然后全部展开
  */
@@ -120,7 +94,7 @@ function getSibliing(block: BlockState) {
     if (x2 >= WIDTH || x2 < 0 || y2 >= HEIGHT || y2 < 0) {
       return undefined
     }
-    return state[y2][x2]
+    return state.value[y2][x2]
   }).filter(Boolean) as BlockState[]
 }
 // 游戏完成的逻辑
@@ -129,24 +103,22 @@ function gameYes() {
     return
   }
   // 拍平数组
-  const blocks = state.flat()
-  if (blocks.every(block => block.flagged || block.revealed)) {
-    if (blocks.some(block => block.mine && block.flagged)) {
-      // alert("你找到了所有的炸弹")
-    }
+  const blocks = state.value.flat()
+  if (blocks.filter(block => block.flagged && block.mine).length === MINE_COUNT) {
+    // alert("你找到了所有的炸弹")
   }
 }
 function onClick(x: number, y: number) {
   if (!isMineGenerated) {
-    generateMines(state[y][x])
+    generateMines(state.value[y][x])
     updateAdjacentMines()
     isMineGenerated = true
   }
-  expendZero(state[y][x])
-  state[y][x].revealed = true
-  if (state[y][x].mine) {
+  expendZero(state.value[y][x])
+  state.value[y][x].revealed = true
+  if (state.value[y][x].mine) {
     // 把棋盘上的所有带炸弹的格子都给翻开
-    state.forEach((row) => {
+    state.value.forEach((row) => {
       row.forEach((block) => {
         if (block.mine) {
           block.revealed = true
@@ -170,17 +142,10 @@ function rightClick(block: BlockState) {
   <div>
     Minesweeper
     <div v-for="(row, y) in state" :key="y" flex="~" justify-center>
-      <button
-        v-for="(item, x) in row" :key="x" m="0.5" :class="getBlockClass(item)" h-10 w-10 border
-        @contextmenu.prevent.stop="rightClick(item)" @click="onClick(x, y)"
-      >
-        <template v-if="item.revealed || !dev">
-          {{ item.mine ? "💣" : item.adjacentMines }}
-        </template>
-        <template v-if="item.flagged">
-          {{ "🚩" }}
-        </template>
-      </button>
+      <MineBlock
+        v-for="(block, x) in row" :key="x" :block="block"
+        @click="onClick(x, y)" @contextmenu.prevent.stop="rightClick(block)"
+      />
     </div>
   </div>
 </template>
