@@ -11,6 +11,7 @@ export interface BlockState {
   adjacentMines: number
 }
 export interface GameState {
+  difficulty: 'easy' | 'medium' | 'hard'
   isMineGenerated: boolean
   borad: BlockState[][]
   gameState: 'play' | 'win' | 'lose'

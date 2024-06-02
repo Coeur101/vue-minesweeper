@@ -35,10 +35,7 @@ export class GamePlay {
     const randomMines = () => {
       const x = this.getRandomInt(0, this.WIDTH - 1)
       const y = this.getRandomInt(0, this.HEIGHT - 1)
-      if (Math.abs(currentBlock.x - x) <= 1) {
-        return false
-      }
-      if (Math.abs(currentBlock.y - y) <= 1) {
+      if (Math.abs(currentBlock.x - x) <= 1 && Math.abs(currentBlock.y - y) <= 1) {
         return false
       }
       if (this.borad[y][x].mine) {
@@ -106,7 +103,10 @@ export class GamePlay {
   /**
    * 重置
    */
-  reset = () => {
+  reset = (WIDTH: number = this.WIDTH, HEIGHT: number = this.HEIGHT, MINES_COUNT: number = this.MINES_COUNT, difficulty: 'easy' | 'medium' | 'hard' = 'easy') => {
+    this.MINES_COUNT = MINES_COUNT
+    this.WIDTH = WIDTH
+    this.HEIGHT = HEIGHT
     this.state.value = {
       borad: Array.from({ length: this.HEIGHT }, (_, y) =>
         Array.from({ length: this.WIDTH }, (_, x): BlockState => {
@@ -119,6 +119,7 @@ export class GamePlay {
         })),
       isMineGenerated: false,
       gameState: 'play',
+      difficulty,
     }
   }
 
