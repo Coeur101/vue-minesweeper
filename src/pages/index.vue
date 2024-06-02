@@ -1,17 +1,18 @@
 <script setup lang="ts" generic="T extends any, O extends any">
 import MineBlock from '~/components/MineBlock.vue'
 import { GamePlay } from '~/composables/index'
+import Confiti from '~/components/Confiti.vue'
 
 defineOptions({
   name: 'IndexPage',
 })
-const gamePlay = new GamePlay(12, 12, 10)
+const gamePlay = new GamePlay(5, 5, 1)
 useStorage('minesweeperState', gamePlay.state)
 const state = computed(() => gamePlay.borad)
 </script>
 
 <template>
-  <div>
+  <div w-auto scroll-auto p5>
     Minesweeper
     <div v-for="(row, y) in state" :key="y" flex="~" justify-center>
       <MineBlock
@@ -28,4 +29,5 @@ const state = computed(() => gamePlay.borad)
       {{ isDev ? 'NORMAL' : 'DEV' }}
     </button>
   </div>
+  <Confiti :state="gamePlay.state.value.gameState === 'win'" />
 </template>
