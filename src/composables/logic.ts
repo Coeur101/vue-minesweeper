@@ -17,13 +17,7 @@ export class GamePlay {
     [1, 1],
   ]
 
-  HEIGHT = 0
-  WIDTH = 0
-  // 炸弹个数
-  MINE_COUNT = 0
-  constructor(public width: number, public height: number) {
-    this.HEIGHT = height
-    this.WIDTH = width
+  constructor(public WIDTH: number, public HEIGHT: number, public MINES_COUNT: number) {
     this.reset()
   }
 
@@ -31,24 +25,36 @@ export class GamePlay {
     return this.state.value.borad
   }
 
+  // 计算范围内的随机数
+  getRandomInt(min: number, max: number) {
+    return Math.round(Math.random() * (max - min) + min)
+  }
+
   // 随机生成炸弹
   generateMines(currentBlock: BlockState) {
-    for (const row of this.borad) {
-      for (const block of row) {
-        // 当前点击的周围不生成地雷
-        if (Math.abs(currentBlock.x - block.x) <= 1) {
-          continue
-        }
-        if (Math.abs(currentBlock.y - block.y) <= 1) {
-          continue
-        }
-        // 十分之一的概率会出现地雷
-        if (Math.random() < 0.3) {
-          block.mine = true
-          this.MINE_COUNT++
-        }
+    const randomMines = () => {
+      const x = this.getRandomInt(0, this.WIDTH - 1)
+      const y = this.getRandomInt(0, this.HEIGHT - 1)
+      if (Math.abs(currentBlock.x - x) <= 1) {
+        return false
       }
+      if (Math.abs(currentBlock.y - y) <= 1) {
+        return false
+      }
+      if (this.borad[y][x].mine) {
+        return false
+      }
+      this.borad[y][x].mine = true
+      return true
     }
+    // 通过炸弹的个个数来遍历哪几个格子需要放置炸弹
+    Array.from({ length: this.MINES_COUNT }, () => false).forEach(() => {
+      let placed = false
+      // 不断调用随机生成炸弹的函数，直到成功为止
+      while (!placed) {
+        placed = randomMines()
+      }
+    })
   }
 
   // 计算格子边上有几个炸弹
@@ -103,7 +109,7 @@ export class GamePlay {
   reset = () => {
     this.state.value = {
       borad: Array.from({ length: this.HEIGHT }, (_, y) =>
-        Array.from({ length: this.width }, (_, x): BlockState => {
+        Array.from({ length: this.WIDTH }, (_, x): BlockState => {
           return {
             x,
             y,
@@ -123,7 +129,7 @@ export class GamePlay {
     }
     // 拍平数组
     const blocks = this.state.value.borad.flat()
-    if (blocks.filter(block => block.flagged && block.mine).length === this.MINE_COUNT) {
+    if (blocks.filter(block => block.flagged && block.mine).length === this.MINES_COUNT) {
       this.state.value.gameState = 'win'
       // alert("你找到了所有的炸弹")
     }

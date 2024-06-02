@@ -1,2 +1,2 @@
-export const isDev = ref(true)
+export const isDev = ref(false)
 export const toggleDev = useToggle(isDev)

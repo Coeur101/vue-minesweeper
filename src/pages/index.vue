@@ -5,7 +5,7 @@ import { GamePlay } from '~/composables/index'
 defineOptions({
   name: 'IndexPage',
 })
-const gamePlay = new GamePlay(12, 12)
+const gamePlay = new GamePlay(12, 12, 10)
 useStorage('minesweeperState', gamePlay.state)
 const state = computed(() => gamePlay.borad)
 </script>
@@ -25,7 +25,7 @@ const state = computed(() => gamePlay.borad)
       RESET
     </button>
     <button h-7 w-20 border hover:bg-gray-1 @click="toggleDev()">
-      {{ isDev ? 'DEV' : 'NORMAL' }}
+      {{ isDev ? 'NORMAL' : 'DEV' }}
     </button>
   </div>
 </template>
