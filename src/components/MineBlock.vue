@@ -1,10 +1,10 @@
 <script setup lang='ts'>
 import type { BlockState } from '~/types'
+import { isDev } from '~/composables'
 
 defineProps<{
   block: BlockState
 }>()
-const dev = false
 const NumberColors = [
   'text-transparent',
   'text-red-500',
@@ -29,10 +29,8 @@ function getBlockClass(item: BlockState) {
 </script>
 
 <template>
-  <button
-    m="0.5" :class="getBlockClass(block)" h-10 w-10 border
-  >
-    <template v-if="block.revealed || !dev">
+  <button m="0.5" :class="getBlockClass(block)" h-10 w-10 border>
+    <template v-if="block.revealed || isDev">
       {{ block.mine ? "💣" : block.adjacentMines }}
     </template>
     <template v-if="block.flagged">
