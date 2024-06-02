@@ -6,7 +6,8 @@ defineOptions({
   name: 'IndexPage',
 })
 const gamePlay = new GamePlay(12, 12)
-const state = gamePlay.state
+useStorage('minesweeperState', gamePlay.state)
+const state = computed(() => gamePlay.borad)
 </script>
 
 <template>

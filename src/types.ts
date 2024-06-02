@@ -10,3 +10,8 @@ export interface BlockState {
   // 附近的地雷数
   adjacentMines: number
 }
+export interface GameState {
+  isMineGenerated: boolean
+  borad: BlockState[][]
+  gameState: 'play' | 'win' | 'lose'
+}

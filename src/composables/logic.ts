@@ -1,13 +1,10 @@
-import type { BlockState } from '~/types'
+import type { BlockState, GameState } from '~/types'
 /**
  * 关于棋盘内部的逻辑全部抽离
  */
 export class GamePlay {
-  // 设置这个扫雷的画布大小
-  WIDTH = 12
-  HEIGHT = 12
-  isMineGenerated = false
-  state = ref<BlockState[][]>([])
+  state = ref() as Ref<GameState>
+
   // 周围的边界值 排列组合
   diretions = [
     [-1, -1],
@@ -20,6 +17,8 @@ export class GamePlay {
     [1, 1],
   ]
 
+  HEIGHT = 0
+  WIDTH = 0
   // 炸弹个数
   MINE_COUNT = 0
   constructor(public width: number, public height: number) {
@@ -28,9 +27,13 @@ export class GamePlay {
     this.reset()
   }
 
+  get borad() {
+    return this.state.value.borad
+  }
+
   // 随机生成炸弹
   generateMines(currentBlock: BlockState) {
-    for (const row of this.state.value) {
+    for (const row of this.borad) {
       for (const block of row) {
         // 当前点击的周围不生成地雷
         if (Math.abs(currentBlock.x - block.x) <= 1) {
@@ -50,7 +53,7 @@ export class GamePlay {
 
   // 计算格子边上有几个炸弹
   updateAdjacentMines() {
-    this.state.value.forEach((row) => {
+    this.borad.forEach((row) => {
       row.forEach((block) => {
         // 已经又炸弹了就return
         if (block.mine) {
@@ -90,7 +93,7 @@ export class GamePlay {
       if (x2 >= this.WIDTH || x2 < 0 || y2 >= this.HEIGHT || y2 < 0) {
         return undefined
       }
-      return this.state.value[y2][x2]
+      return this.state.value.borad[y2][x2]
     }).filter(Boolean) as BlockState[]
   }
 
@@ -98,41 +101,49 @@ export class GamePlay {
    * 重置
    */
   reset = () => {
-    this.state.value = Array.from({ length: this.HEIGHT }, (_, y) =>
-      Array.from({ length: this.WIDTH }, (_, x): BlockState => {
-        return {
-          x,
-          y,
-          adjacentMines: 0,
-          revealed: false,
-        }
-      }))
-    this.isMineGenerated = false
+    this.state.value = {
+      borad: Array.from({ length: this.HEIGHT }, (_, y) =>
+        Array.from({ length: this.width }, (_, x): BlockState => {
+          return {
+            x,
+            y,
+            adjacentMines: 0,
+            revealed: false,
+          }
+        })),
+      isMineGenerated: false,
+      gameState: 'play',
+    }
   }
 
   // 游戏完成的逻辑
   gameYes() {
-    if (!this.isMineGenerated) {
+    if (!this.state.value.isMineGenerated) {
       return
     }
     // 拍平数组
-    const blocks = this.state.value.flat()
+    const blocks = this.state.value.borad.flat()
     if (blocks.filter(block => block.flagged && block.mine).length === this.MINE_COUNT) {
+      this.state.value.gameState = 'win'
       // alert("你找到了所有的炸弹")
     }
   }
 
   onClick(x: number, y: number) {
-    if (!this.isMineGenerated) {
-      this.generateMines(this.state.value[y][x])
-      this.updateAdjacentMines()
-      this.isMineGenerated = true
+    // 判断是否胜利或失败，然后短路
+    if (this.state.value.gameState === 'lose' || this.state.value.gameState === 'win') {
+      return
     }
-    this.expendZero(this.state.value[y][x])
-    this.state.value[y][x].revealed = true
-    if (this.state.value[y][x].mine) {
+    if (!this.state.value.isMineGenerated) {
+      this.generateMines(this.state.value.borad[y][x])
+      this.updateAdjacentMines()
+      this.state.value.isMineGenerated = true
+    }
+    this.expendZero(this.state.value.borad[y][x])
+    this.state.value.borad[y][x].revealed = true
+    if (this.state.value.borad[y][x].mine) {
       // 把棋盘上的所有带炸弹的格子都给翻开
-      this.state.value.forEach((row) => {
+      this.state.value.borad.forEach((row) => {
         row.forEach((block) => {
           if (block.mine) {
             block.revealed = true
@@ -140,12 +151,17 @@ export class GamePlay {
           }
         })
       })
+      this.state.value.gameState = 'lose'
       // window.alert("BOOM! 游戏结束")
     }
   }
 
   // 右键标记
   rightClick(block: BlockState) {
+    // 判断是否胜利或失败，然后短路
+    if (this.state.value.gameState === 'lose' || this.state.value.gameState === 'win') {
+      return
+    }
     if (block.revealed)
       return
     block.flagged = !block.flagged
