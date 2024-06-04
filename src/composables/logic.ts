@@ -182,7 +182,7 @@ export class GamePlay {
     }
     // 拍平数组
     const blocks = this.state.value.borad.flat()
-    if (blocks.filter(block => block.flagged && block.mine).length === this.MINES_COUNT) {
+    if ((blocks.filter(block => (block.flagged && block.mine)).length === this.MINES_COUNT) || (blocks.filter(block => (block.revealed && !block.mine)).length === blocks.length - this.MINES_COUNT)) {
       this.state.value.gameState = 'win'
       // alert("你找到了所有的炸弹")
     }
@@ -201,6 +201,7 @@ export class GamePlay {
     this.expendZero(block)
     block.revealed = true
     block.flagged = false
+    this.gameYes()
     if (block.mine) {
       // 把棋盘上的所有带炸弹的格子都给翻开
       this.state.value.borad.forEach((row) => {
