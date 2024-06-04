@@ -9,6 +9,14 @@ defineOptions({
 const gamePlay = new GamePlay(5, 5, 5)
 useStorage('minesweeperState', gamePlay.state)
 const state = computed(() => gamePlay.borad)
+const mines = computed(() => {
+  if (!gamePlay.state.value.isMineGenerated) {
+    return '0'
+  }
+  return gamePlay.blocks.reduce((a, b) => {
+    return a + (b.mine ? 1 : 0) - (b.flagged ? 1 : 0)
+  }, 0)
+})
 function newGamePlay(level: 'easy' | 'medium' | 'hard') {
   switch (level) {
     case 'easy':
@@ -34,8 +42,12 @@ function newGamePlay(level: 'easy' | 'medium' | 'hard') {
     <p class="text-fuchsia font-600">
       difficulty: {{ gamePlay.state.value.difficulty }}
     </p>
+    <div flex="~ justify-center items-center gap-1" text-size-2xl font-bold>
+      💣
+      {{ mines }}
+    </div>
     <div flex="~ gap-1 justify-center" m-2>
-      <button border p-1 hover:bg-gray-1 @click="gamePlay.reset()">
+      <button border p-1 hover:bg-gray-1 @click="gamePlay.reset(gamePlay.state.value.difficulty)">
         New Game
       </button>
       <button border p-1 hover:bg-gray-1 @click="newGamePlay('easy')">

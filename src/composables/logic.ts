@@ -25,6 +25,10 @@ export class GamePlay {
     return this.state.value.borad
   }
 
+  get blocks() {
+    return this.borad.flat()
+  }
+
   // 计算范围内的随机数
   getRandomInt(min: number, max: number) {
     return Math.round(Math.random() * (max - min) + min)
@@ -103,23 +107,71 @@ export class GamePlay {
   /**
    * 重置
    */
-  reset = (WIDTH: number = this.WIDTH, HEIGHT: number = this.HEIGHT, MINES_COUNT: number = this.MINES_COUNT, difficulty: 'easy' | 'medium' | 'hard' = 'easy') => {
-    this.MINES_COUNT = MINES_COUNT
-    this.WIDTH = WIDTH
-    this.HEIGHT = HEIGHT
-    this.state.value = {
-      borad: Array.from({ length: this.HEIGHT }, (_, y) =>
-        Array.from({ length: this.WIDTH }, (_, x): BlockState => {
-          return {
-            x,
-            y,
-            adjacentMines: 0,
-            revealed: false,
-          }
-        })),
-      isMineGenerated: false,
-      gameState: 'play',
-      difficulty,
+  reset(difficulty?: 'easy' | 'medium' | 'hard'): void
+  reset(WIDTH?: number, HEIGHT?: number, MINES_COUNT?: number, difficulty?: 'easy' | 'medium' | 'hard'): void
+  reset(arg1?: number | 'easy' | 'medium' | 'hard', arg2?: number, arg3?: number, arg4?: 'easy' | 'medium' | 'hard'): void {
+    if (typeof arg1 === 'number') {
+      // 处理 (WIDTH, HEIGHT, MINES_COUNT, difficulty) 重载
+      const WIDTH = arg1
+      const HEIGHT = arg2 ?? this.HEIGHT
+      const MINES_COUNT = arg3 ?? this.MINES_COUNT
+      const difficulty = arg4 ?? 'easy'
+
+      this.MINES_COUNT = MINES_COUNT
+      this.WIDTH = WIDTH
+      this.HEIGHT = HEIGHT
+      this.state.value = {
+        borad: Array.from({ length: this.HEIGHT }, (_, y) =>
+          Array.from({ length: this.WIDTH }, (_, x): BlockState => {
+            return {
+              x,
+              y,
+              adjacentMines: 0,
+              revealed: false,
+            }
+          })),
+        isMineGenerated: false,
+        gameState: 'play',
+        difficulty,
+      }
+    }
+    else {
+      // 处理 (difficulty) 重载
+      const difficulty = arg1
+
+      // 根据难度设置默认值
+      switch (difficulty) {
+        case 'easy':
+          this.WIDTH = 10
+          this.HEIGHT = 10
+          this.MINES_COUNT = 10
+          break
+        case 'medium':
+          this.WIDTH = 16
+          this.HEIGHT = 16
+          this.MINES_COUNT = 40
+          break
+        case 'hard':
+          this.WIDTH = 30
+          this.HEIGHT = 16
+          this.MINES_COUNT = 99
+          break
+      }
+
+      this.state.value = {
+        borad: Array.from({ length: this.HEIGHT }, (_, y) =>
+          Array.from({ length: this.WIDTH }, (_, x): BlockState => {
+            return {
+              x,
+              y,
+              adjacentMines: 0,
+              revealed: false,
+            }
+          })),
+        isMineGenerated: false,
+        gameState: 'play',
+        difficulty: difficulty as 'easy' | 'medium' | 'hard',
+      }
     }
   }
 
@@ -148,6 +200,7 @@ export class GamePlay {
     }
     this.expendZero(this.state.value.borad[y][x])
     this.state.value.borad[y][x].revealed = true
+    this.state.value.borad[y][x].flagged = false
     if (this.state.value.borad[y][x].mine) {
       // 把棋盘上的所有带炸弹的格子都给翻开
       this.state.value.borad.forEach((row) => {
