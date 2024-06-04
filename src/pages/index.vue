@@ -62,8 +62,8 @@ function newGamePlay(level: 'easy' | 'medium' | 'hard') {
     </div>
     <div v-for="(row, y) in state" :key="y" flex="~" justify-center>
       <MineBlock
-        v-for="(block, x) in row" :key="x" :block="block" @click="gamePlay.onClick(x, y)"
-        @contextmenu.prevent.stop="gamePlay.rightClick(block)"
+        v-for="(block, x) in row" :key="x" :block="block" @click="gamePlay.onClick(block)"
+        @dblclick="gamePlay.autoExpend(block)" @contextmenu.prevent.stop="gamePlay.rightClick(block)"
       />
     </div>
   </div>

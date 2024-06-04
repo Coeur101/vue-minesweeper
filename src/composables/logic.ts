@@ -142,8 +142,8 @@ export class GamePlay {
       // 根据难度设置默认值
       switch (difficulty) {
         case 'easy':
-          this.WIDTH = 10
-          this.HEIGHT = 10
+          this.WIDTH = 9
+          this.HEIGHT = 9
           this.MINES_COUNT = 10
           break
         case 'medium':
@@ -188,20 +188,20 @@ export class GamePlay {
     }
   }
 
-  onClick(x: number, y: number) {
+  onClick(block: BlockState) {
     // 判断是否胜利或失败，然后短路
     if (this.state.value.gameState === 'lose' || this.state.value.gameState === 'win') {
       return
     }
     if (!this.state.value.isMineGenerated) {
-      this.generateMines(this.state.value.borad[y][x])
+      this.generateMines(block)
       this.updateAdjacentMines()
       this.state.value.isMineGenerated = true
     }
-    this.expendZero(this.state.value.borad[y][x])
-    this.state.value.borad[y][x].revealed = true
-    this.state.value.borad[y][x].flagged = false
-    if (this.state.value.borad[y][x].mine) {
+    this.expendZero(block)
+    block.revealed = true
+    block.flagged = false
+    if (block.mine) {
       // 把棋盘上的所有带炸弹的格子都给翻开
       this.state.value.borad.forEach((row) => {
         row.forEach((block) => {
@@ -226,5 +226,20 @@ export class GamePlay {
       return
     block.flagged = !block.flagged
     this.gameYes()
+  }
+
+  autoExpend(block: BlockState) {
+    const slibling = this.getSibliing(block)
+    const flags = slibling.reduce((a, b) => a + (b.flagged ? 1 : 0), 0)
+    if (flags === block.adjacentMines) {
+      slibling.forEach((item) => {
+        if (!item.flagged) {
+          item.revealed = true
+        }
+        if (item.mine && !item.flagged) {
+          this.onClick(item)
+        }
+      })
+    }
   }
 }
